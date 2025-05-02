@@ -9,6 +9,15 @@ try {
         throw new Exception('La plataforma es requerida');
     }
 
+    // Get first available user - note the singular "usuario" table name
+    $usersResult = $supabase->request('GET', '/rest/v1/usuario?select=id_usuario&limit=1');
+    
+    if ($usersResult['status'] >= 200 && $usersResult['status'] < 300 && !empty($usersResult['data'])) {
+        $defaultUserId = $usersResult['data'][0]['id_usuario'];
+    } else {
+        throw new Exception('No se encontraron usuarios en la base de datos');
+    }
+
     // Preparar datos para Supabase
     $publicationData = [
         'plataforma' => $_POST['plataforma'],
@@ -16,13 +25,12 @@ try {
         'fecha_publicacion' => date('Y-m-d H:i:s')
     ];
     
-    // Si tienes un id_usuario para asignar, puedes agregarlo aquí
+    // Asignar ID de usuario
     if (isset($_POST['id_usuario'])) {
         $publicationData['id_usuario'] = $_POST['id_usuario'];
     } else {
-        // Obtener el primer usuario como usuario por defecto (esto dependerá de cómo tengas configurada tu tabla usuarios en Supabase)
-        // Para este caso, simplemente asignaremos un ID 1 como valor por defecto
-        $publicationData['id_usuario'] = 1;
+        // Usar el ID del primer usuario encontrado
+        $publicationData['id_usuario'] = $defaultUserId;
     }
 
     $result = $supabase->createPublication($publicationData);
@@ -34,7 +42,7 @@ try {
             'message' => 'Publicación creada exitosamente'
         ]);
     } else {
-        throw new Exception('Error al crear la publicación');
+        throw new Exception('Error al crear la publicación: ' . json_encode($result));
     }
 } catch(Exception $e) {
     echo json_encode([

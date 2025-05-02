@@ -14,7 +14,14 @@ class SupabaseConfig {
             'Content-Type: application/json',
             'Prefer: return=representation'
         ];
-
+    
+        // Log request details
+        error_log("Supabase Request: $method $url");
+        error_log("Headers: " . json_encode($headers));
+        if ($data) {
+            error_log("Data: " . json_encode($data));
+        }
+    
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -26,15 +33,26 @@ class SupabaseConfig {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             }
         }
-
+    
+        // Add option to see more details about the request
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        $verbose = fopen('php://temp', 'w+');
+        curl_setopt($ch, CURLOPT_STDERR, $verbose);
+    
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
+        
+        // Log verbose output
+        rewind($verbose);
+        $verboseLog = stream_get_contents($verbose);
+        error_log("Verbose curl output: " . $verboseLog);
+        
         if ($http_code >= 400) {
             error_log("Error en la solicitud a Supabase: $http_code - $response");
         }
-
+    
+        curl_close($ch);
+    
         return [
             'status' => $http_code,
             'data' => json_decode($response, true)
@@ -55,7 +73,17 @@ class SupabaseConfig {
     
     // Crear una nueva publicación
     public function createPublication($data) {
-        return $this->request('POST', '/rest/v1/publicaciones', $data);
+        try {
+            $response = $this->request('POST', '/rest/v1/publicaciones', $data);
+            
+            // Logging para depuración
+            error_log('Respuesta completa de Supabase para createPublication: ' . json_encode($response));
+            
+            return $response;
+        } catch(Exception $e) {
+            error_log('Error en createPublication: ' . $e->getMessage());
+            throw $e;
+        }
     }
     
     // Actualizar una publicación
