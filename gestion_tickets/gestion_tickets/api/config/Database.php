@@ -337,5 +337,4 @@ if (!defined('PDO::ATTR_ERRMODE')) {
     define('PDO::ATTR_DEFAULT_FETCH_MODE', 19);
 }
 
-class PDOException extends Exception {}
 ?>

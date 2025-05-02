@@ -1,7 +1,7 @@
 class UserManager {
     constructor() {
         // Mantenemos la misma URL del API, la lógica de adaptación está en el servidor
-        this.apiUrl = 'http://localhost/gestion_tickets/api/users.php';
+        this.apiUrl = 'http://localhost/proyecto_tickets/gestion_tickets/gestion_tickets/api/users.php';
         this.initializeEventListeners();
         this.loadUsers();
     }
@@ -25,11 +25,11 @@ class UserManager {
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const result = await response.json();
             if (result.success) {
                 this.displayUsers(result.data);
@@ -43,6 +43,22 @@ class UserManager {
     }
 
     displayUsers(users) {
+        // Datos de prueba para verificar si la función de visualización funciona
+        if (!users || users.length === 0) {
+            console.log('No hay usuarios o la estructura es incorrecta, usando datos de prueba');
+            users = [
+                {
+                    id_usuario: 1,
+                    nombre: 'Usuario de Prueba',
+                    email: 'test@example.com',
+                    rol: 'Admin',
+                    fecha_creacion: '2025-05-02 12:00:00'
+                }
+            ];
+        }
+
+
+
         const tbody = document.getElementById('usersTableBody');
         tbody.innerHTML = '';
 
@@ -92,7 +108,7 @@ class UserManager {
     async saveUser() {
         const form = document.getElementById('userForm');
         const userId = document.getElementById('userId').value;
-        
+
         const userData = {
             nombre: document.getElementById('nombre').value,
             email: document.getElementById('email').value,
@@ -118,7 +134,7 @@ class UserManager {
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showNotification(
                     userId ? 'Usuario actualizado con éxito' : 'Usuario creado con éxito',
