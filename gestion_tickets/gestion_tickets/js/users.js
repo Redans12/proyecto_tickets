@@ -1,5 +1,6 @@
 class UserManager {
     constructor() {
+        // Mantenemos la misma URL del API, la lógica de adaptación está en el servidor
         this.apiUrl = 'http://localhost/gestion_tickets/api/users.php';
         this.initializeEventListeners();
         this.loadUsers();
@@ -29,20 +30,15 @@ class UserManager {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const responseText = await response.text();
-            try {
-                const result = JSON.parse(responseText);
-                if (result.success) {
-                    this.displayUsers(result.data);
-                } else {
-                    throw new Error(result.message || 'Error al cargar usuarios');
-                }
-            } catch (parseError) {
-                console.error('Response text:', responseText);
-                throw new Error('Error al procesar la respuesta del servidor');
+            const result = await response.json();
+            if (result.success) {
+                this.displayUsers(result.data);
+            } else {
+                throw new Error(result.message || 'Error al cargar usuarios');
             }
         } catch (error) {
             this.showNotification('Error al cargar usuarios: ' + error.message, 'error');
+            console.error('Error completo:', error);
         }
     }
 
@@ -121,27 +117,21 @@ class UserManager {
                 body: JSON.stringify(userData)
             });
 
-            const responseText = await response.text();
-            console.log('Response:', responseText); 
-
-            try {
-                const result = JSON.parse(responseText);
-                if (result.success) {
-                    this.showNotification(
-                        userId ? 'Usuario actualizado con éxito' : 'Usuario creado con éxito',
-                        'success'
-                    );
-                    bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
-                    this.loadUsers();
-                } else {
-                    throw new Error(result.message || 'Error en la operación');
-                }
-            } catch (parseError) {
-                console.error('Error parsing JSON:', responseText);
-                throw new Error('Error al procesar la respuesta del servidor');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showNotification(
+                    userId ? 'Usuario actualizado con éxito' : 'Usuario creado con éxito',
+                    'success'
+                );
+                bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                this.loadUsers();
+            } else {
+                throw new Error(result.message || 'Error en la operación');
             }
         } catch (error) {
             this.showNotification('Error: ' + error.message, 'error');
+            console.error('Error completo:', error);
         }
     }
 
@@ -158,20 +148,15 @@ class UserManager {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const responseText = await response.text();
-            try {
-                const result = JSON.parse(responseText);
-                if (result.success) {
-                    this.showUserModal(result.data);
-                } else {
-                    throw new Error(result.message || 'Error al cargar el usuario');
-                }
-            } catch (parseError) {
-                console.error('Error parsing JSON:', responseText);
-                throw new Error('Error al procesar la respuesta del servidor');
+            const result = await response.json();
+            if (result.success) {
+                this.showUserModal(result.data);
+            } else {
+                throw new Error(result.message || 'Error al cargar el usuario');
             }
         } catch (error) {
             this.showNotification('Error al cargar el usuario: ' + error.message, 'error');
+            console.error('Error completo:', error);
         }
     }
 
@@ -192,21 +177,16 @@ class UserManager {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const responseText = await response.text();
-            try {
-                const result = JSON.parse(responseText);
-                if (result.success) {
-                    this.showNotification('Usuario eliminado con éxito', 'success');
-                    this.loadUsers();
-                } else {
-                    throw new Error(result.message || 'Error al eliminar el usuario');
-                }
-            } catch (parseError) {
-                console.error('Error parsing JSON:', responseText);
-                throw new Error('Error al procesar la respuesta del servidor');
+            const result = await response.json();
+            if (result.success) {
+                this.showNotification('Usuario eliminado con éxito', 'success');
+                this.loadUsers();
+            } else {
+                throw new Error(result.message || 'Error al eliminar el usuario');
             }
         } catch (error) {
             this.showNotification('Error al eliminar el usuario: ' + error.message, 'error');
+            console.error('Error completo:', error);
         }
     }
 

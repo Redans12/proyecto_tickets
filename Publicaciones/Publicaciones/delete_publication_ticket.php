@@ -1,28 +1,30 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
 try {
-    $id = isset($_GET['id']) ? $_GET['id'] : null;
+    // Puede recibir un ID combinado o IDs separados
+    $id_relacion = isset($_GET['id']) ? $_GET['id'] : null;
+    $id_publicacion = isset($_GET['id_publicacion']) ? $_GET['id_publicacion'] : null;
+    $id_ticket = isset($_GET['id_ticket']) ? $_GET['id_ticket'] : null;
     
-    if (!$id) {
-        throw new Exception('ID no proporcionado');
+    // Si recibimos un ID combinado, extraemos los IDs individuales
+    if ($id_relacion && !$id_publicacion && !$id_ticket) {
+        $parts = explode('-', $id_relacion);
+        if (count($parts) === 2) {
+            $id_publicacion = $parts[0];
+            $id_ticket = $parts[1];
+        }
+    }
+    
+    if (!$id_publicacion || !$id_ticket) {
+        throw new Exception('IDs no proporcionados correctamente');
     }
 
-    // Primero verificamos si la relación existe
-    $checkStmt = $pdo->prepare("SELECT * FROM publicaciones_tickets WHERE id_publicacion = ? OR id_ticket = ?");
-    $checkStmt->execute([$id, $id]);
+    $result = $supabase->deletePublicationTicket($id_publicacion, $id_ticket);
     
-    if (!$checkStmt->fetch()) {
-        throw new Exception('La relación no existe');
-    }
-
-    // Si existe, procedemos a eliminarla
-    $stmt = $pdo->prepare("DELETE FROM publicaciones_tickets WHERE id_publicacion = ? OR id_ticket = ?");
-    $success = $stmt->execute([$id, $id]);
-    
-    if ($success) {
+    if ($result['status'] >= 200 && $result['status'] < 300) {
         echo json_encode(['success' => true]);
     } else {
         throw new Exception('Error al eliminar la relación');

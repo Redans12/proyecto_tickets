@@ -1,15 +1,17 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
 try {
-    $stmt = $pdo->query("SELECT id_publicacion, plataforma, enlace, fecha_publicacion 
-                         FROM publicaciones 
-                         ORDER BY fecha_publicacion DESC");
-    $publications = $stmt->fetchAll();
-    echo json_encode($publications);
-} catch(PDOException $e) {
+    $result = $supabase->getPublications();
+    
+    if ($result['status'] >= 200 && $result['status'] < 300) {
+        echo json_encode($result['data']);
+    } else {
+        throw new Exception('Error al obtener las publicaciones');
+    }
+} catch(Exception $e) {
     echo json_encode([
         'error' => true,
         'message' => 'Error al obtener las publicaciones: ' . $e->getMessage()

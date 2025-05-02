@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
@@ -10,22 +10,13 @@ try {
         throw new Exception('ID no proporcionado');
     }
 
-    $stmt = $pdo->prepare("DELETE FROM publicaciones WHERE id_publicacion = ?");
-    $success = $stmt->execute([$id]);
+    $result = $supabase->deletePublication($id);
     
-    if ($success) {
+    if ($result['status'] >= 200 && $result['status'] < 300) {
         echo json_encode(['success' => true]);
     } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Error al eliminar la publicación'
-        ]);
+        throw new Exception('Error al eliminar la publicación');
     }
-} catch(PDOException $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error de base de datos: ' . $e->getMessage()
-    ]);
 } catch(Exception $e) {
     echo json_encode([
         'success' => false,

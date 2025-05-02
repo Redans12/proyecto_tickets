@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
@@ -9,27 +9,21 @@ try {
     }
 
     $id = $_POST['id_publicacion'];
-    $plataforma = $_POST['plataforma'];
-    $enlace = isset($_POST['enlace']) ? $_POST['enlace'] : null;
+    $updateData = [
+        'plataforma' => $_POST['plataforma'],
+        'enlace' => isset($_POST['enlace']) ? $_POST['enlace'] : null
+    ];
 
-    $sql = "UPDATE publicaciones 
-            SET plataforma = ?, 
-                enlace = ?
-            WHERE id_publicacion = ?";
+    $result = $supabase->updatePublication($id, $updateData);
     
-    $stmt = $pdo->prepare($sql);
-    $success = $stmt->execute([$plataforma, $enlace, $id]);
-
-    if ($success) {
-        echo json_encode(['success' => true]);
+    if ($result['status'] >= 200 && $result['status'] < 300) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Publicación actualizada exitosamente'
+        ]);
     } else {
         throw new Exception('Error al actualizar la publicación');
     }
-} catch(PDOException $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error de base de datos: ' . $e->getMessage()
-    ]);
 } catch(Exception $e) {
     echo json_encode([
         'success' => false,

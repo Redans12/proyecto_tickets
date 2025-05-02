@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
@@ -9,42 +9,33 @@ try {
         throw new Exception('La plataforma es requerida');
     }
 
-    // Obtener el primer usuario como usuario por defecto (puedes modificar esto según tu lógica de autenticación)
-    $stmtUser = $pdo->query("SELECT id_usuario FROM usuarios WHERE rol = 'Jefe de Operaciones' LIMIT 1");
-    $usuario = $stmtUser->fetch();
+    // Preparar datos para Supabase
+    $publicationData = [
+        'plataforma' => $_POST['plataforma'],
+        'enlace' => isset($_POST['enlace']) ? $_POST['enlace'] : null,
+        'fecha_publicacion' => date('Y-m-d H:i:s')
+    ];
     
-    if (!$usuario) {
-        throw new Exception('No hay usuarios con rol adecuado en el sistema');
+    // Si tienes un id_usuario para asignar, puedes agregarlo aquí
+    if (isset($_POST['id_usuario'])) {
+        $publicationData['id_usuario'] = $_POST['id_usuario'];
+    } else {
+        // Obtener el primer usuario como usuario por defecto (esto dependerá de cómo tengas configurada tu tabla usuarios en Supabase)
+        // Para este caso, simplemente asignaremos un ID 1 como valor por defecto
+        $publicationData['id_usuario'] = 1;
     }
 
-    $id_usuario = $usuario['id_usuario'];
-    $plataforma = $_POST['plataforma'];
-    $enlace = isset($_POST['enlace']) ? $_POST['enlace'] : null;
-
-    // Preparar la consulta SQL con los campos correctos
-    $sql = "INSERT INTO publicaciones (id_usuario, plataforma, enlace, fecha_publicacion) 
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+    $result = $supabase->createPublication($publicationData);
     
-    $stmt = $pdo->prepare($sql);
-    
-    // Ejecutar la consulta con los valores
-    $success = $stmt->execute([$id_usuario, $plataforma, $enlace]);
-
-    if ($success) {
-        $newId = $pdo->lastInsertId();
+    if ($result['status'] >= 200 && $result['status'] < 300) {
         echo json_encode([
             'success' => true,
-            'id' => $newId,
+            'id' => $result['data'][0]['id_publicacion'] ?? null,
             'message' => 'Publicación creada exitosamente'
         ]);
     } else {
         throw new Exception('Error al crear la publicación');
     }
-} catch(PDOException $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error de base de datos: ' . $e->getMessage()
-    ]);
 } catch(Exception $e) {
     echo json_encode([
         'success' => false,

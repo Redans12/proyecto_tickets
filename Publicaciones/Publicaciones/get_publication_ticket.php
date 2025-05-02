@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config_supabase.php';
 
 header('Content-Type: application/json');
 
@@ -8,29 +8,34 @@ try {
     $id_publicacion = isset($_GET['id_publicacion']) ? $_GET['id_publicacion'] : null;
     $id_ticket = isset($_GET['id_ticket']) ? $_GET['id_ticket'] : null;
     
+    if (!$id_publicacion && !$id_ticket) {
+        // Si es un ID combinado, separarlo
+        $id_relacion = isset($_GET['id']) ? $_GET['id'] : null;
+        if ($id_relacion) {
+            $parts = explode('-', $id_relacion);
+            if (count($parts) === 2) {
+                $id_publicacion = $parts[0];
+                $id_ticket = $parts[1];
+            }
+        }
+    }
+    
     if (!$id_publicacion || !$id_ticket) {
-        throw new Exception('Se requieren ambos IDs');
+        throw new Exception('Se requieren los IDs de publicación y ticket');
     }
 
-    // Consultar la relación específica
-    $stmt = $pdo->prepare("
-        SELECT pt.*, p.plataforma, p.enlace 
-        FROM publicaciones_tickets pt 
-        JOIN publicaciones p ON pt.id_publicacion = p.id_publicacion 
-        WHERE pt.id_publicacion = ? AND pt.id_ticket = ?
-    ");
+    $result = $supabase->getPublicationTicket($id_publicacion, $id_ticket);
     
-    $stmt->execute([$id_publicacion, $id_ticket]);
-    $relation = $stmt->fetch();
-    
-    if ($relation) {
+    if ($result['status'] >= 200 && $result['status'] < 300 && !empty($result['data'])) {
+        $relation = $result['data'][0];
         echo json_encode([
             'success' => true,
             'data' => [
+                'id_relacion' => $relation['id_publicacion'] . '-' . $relation['id_ticket'],
                 'id_publicacion' => $relation['id_publicacion'],
                 'id_ticket' => $relation['id_ticket'],
-                'plataforma' => $relation['plataforma'],
-                'enlace' => $relation['enlace']
+                'plataforma' => $relation['publicaciones']['plataforma'],
+                'enlace' => $relation['publicaciones']['enlace']
             ]
         ]);
     } else {
